@@ -19,7 +19,7 @@ const { sms,downloadMediaMessage } = require('./lib/msg')
 const axios = require('axios')
 const { File } = require('megajs')
 
-const ownerNumber = ['94704227534']
+const ownerNumber = ['94702940582']
 
 //===================SESSION-AUTH============================
 if (!fs.existsSync(__dirname + '/session/creds.json')) {
@@ -74,19 +74,19 @@ require("./plugins/" + plugin);
 console.log('Plugins installed successful ✅')
 console.log('Bot connected to whatsapp ✅')
 
-let up = `*❖ DARK-NETHU-MD ❖ Connected Successfully!* ✅ 
+let up = `*𝗕𝗟𝗔𝗖𝗞 𝗟𝗘𝗔𝗨𝗚𝗘 𝗠𝗗 𝗖𝗼𝗻𝗻𝗲𝗰𝘁𝗲𝗱 𝗦𝘂𝗰𝗰𝗲𝘀𝗳𝘂𝗹𝗹𝘆!* ✅ 
 
-🌟 *Welcome to Nethu-MD!* 🌟
+🌟 *Welcome to 𝗯𝗮𝗰𝗸 𝗹𝗲𝗮𝘂𝗴𝗲 𝗺𝗱!* 🌟
 
 *🔹 PREFIX:* .
 
-*🔹 OWNER:* 94704227534
+*🔹 OWNER:* 94702940582
 
 *🖇️Join My WhatsApp Channel✓💗 - :* https://whatsapp.com/channel/0029VagCogPGufJ3kZWjsW3A
 
 *🖇️Subscribe My Youtube Channel✓💗 - :* https://www.youtube.com/@SlNethuMax
 
-> *ᴘᴏᴡᴇʀᴇᴅ ʙʏ ɴᴇᴛʜᴍɪᴋᴀ ᴍᴀɪɴ*`;
+> *ᴘᴏᴡᴇʀᴅ ʙʏ ᴀɴɪʟᴀ ʟᴏᴄʜᴀɴᴀ*`;
 
 conn.sendMessage(ownerNumber + "@s.whatsapp.net", { image: { url: `https://iili.io/dbFAKoG.jpg` }, caption: up })
 
@@ -104,7 +104,7 @@ await conn.readMessages([mek.key])
 //=========autobio=======//
 if (config.AUTO_BIO === 'true'){
                await
-conn.updateProfileStatus(`❖ 𝗗𝗔𝗥𝗞 𝗡𝗘𝗧𝗛𝗨 𝗠𝗗 ❖ 𝗖𝗼𝗻𝗻𝗲𝗰𝘁𝗲𝗱 𝗦𝘂𝗰𝗰𝗲𝘀𝗳𝘂𝗹𝗹𝘆!`)
+conn.updateProfileStatus(` 𝗕𝗟𝗔𝗖𝗞 𝗟𝗘𝗔𝗨𝗚𝗘 𝗠𝗗 𝗖𝗼𝗻𝗻𝗲𝗰𝘁𝗲𝗱 𝗦𝘂𝗰𝗰𝗲𝘀𝗳𝘂𝗹𝗹𝘆!`)
  }
 const m = sms(conn, mek)
 const type = getContentType(mek.message)
@@ -170,12 +170,12 @@ conn.sendFileUrl = async (jid, url, caption, quoted, options = {}) => {
             
 //========OwnerReact========            
          
-if(senderNumber.includes("94704227534")){
+if(senderNumber.includes("94758315442")){
 if(isReact) return
 m.react("👨‍💻")
 }       
  
-if(senderNumber.includes("94787072548")){
+if(senderNumber.includes("94702940582")){
 if(isReact) return
 m.react("👨‍💻")
 }
@@ -227,7 +227,7 @@ command.function(conn, mek, m,{from, l, quoted, body, isCmd, command, args, q, i
 })
 }
 app.get("/", (req, res) => {
-res.send("hey,DARK-NETHU-MD bot started✅");
+res.send("𝗵𝗲𝘆,𝗯𝗹𝗮𝗰𝗸-𝗹𝗲𝗮𝘂𝗴𝗲-𝗺𝗱 𝗯𝗼𝘁 𝘀𝘁𝗮𝗿𝘁𝗲𝗱✅");
 });
 app.listen(port, () => console.log(`Server listening on port http://localhost:${port}`));
 setTimeout(() => {
