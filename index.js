@@ -1,165 +1,159 @@
 const {
-    default: makeWASocket,
-    useMultiFileAuthState,
-    DisconnectReason,
-    jidNormalizedUser,
-    getContentType,
-    fetchLatestBaileysVersion,
-    Browsers
+default: makeWASocket,
+useMultiFileAuthState,
+DisconnectReason,
+jidNormalizedUser,
+getContentType,
+fetchLatestBaileysVersion,
+Browsers
 } = require('@whiskeysockets/baileys')
 
-const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson } = require('./DATABASE/functions')
+const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson } = require('./lib/functions')
 const fs = require('fs')
 const P = require('pino')
 const config = require('./config')
 const qrcode = require('qrcode-terminal')
 const util = require('util')
-const { sms, downloadMediaMessage } = require('./DATABASE/msg')
+const { sms,downloadMediaMessage } = require('./lib/msg')
 const axios = require('axios')
 const { File } = require('megajs')
-const prefix = config.PREFIX 
-const path = require('path');
-const asciiArt = ``;
-const ownerNumber = ['94702940582']
 
-//--------------------| SAHAS-MD Sesion Output |--------------------//
 
-if (!fs.existsSync(__dirname + '/Session/creds.json')) {
-    if(!config.SESSION_ID) return console.log('❎ SAHAS-MD - Please Add Your Session...')
-    const sessdata = config.SESSION_ID
-    const filer = File.fromURL(`https://mega.nz/file/${sessdata}`)
-    filer.download((err, data) => {
-        if(err) throw err
-        fs.writeFile(__dirname + '/Session/creds.json', data, () => {
+const ownerNumber = ['94758315442']
 
-            console.log("✅ SAHAS-MD - Session Downloading...")
-        })
-    })
-}
+//===================SESSION-AUTH============================
+if (!fs.existsSync(__dirname + '/auth_info_baileys/creds.json')) {
+if(!config.SESSION_ID) return console.log('Please add your session to SESSION_ID env !!')
+const sessdata = config.SESSION_ID
+const filer = File.fromURL(`https://mega.nz/file/${sessdata}`)
+filer.download((err, data) => {
+if(err) throw err
+fs.writeFile(__dirname + '/auth_info_baileys/creds.json', data, () => {
+console.log("Session downloaded ✅")
+})})}
+
 const express = require("express");
 const app = express();
 const port = process.env.PORT || 8000;
 
-async function connectToWA() {
-    console.log(asciiArt);
-    console.log("✅ SAHAS-MD - Session Download Completed...");
-    const { state, saveCreds } = await useMultiFileAuthState(__dirname + '/Session/')
-    var { version } = await fetchLatestBaileysVersion()
+//=============================================
 
-    const conn = makeWASocket({
+async function connectToWA() {
+ 
+//=========mongodb=============
+const connectDB = require('./lib/mongodb')
+connectDB();
+        
+ //==========================   
+ const {readEnv} = require('./lib/database')
+ const config = await readEnv();
+ const prefix = config.PREFIX
+ //===========================
+ 
+console.log("Connecting BLUE-LEAUGE-MD 👨‍🏫...");
+const { state, saveCreds } = await useMultiFileAuthState(__dirname + '/auth_info_baileys/')
+var { version } = await fetchLatestBaileysVersion()
+
+const conn = makeWASocket({
         logger: P({ level: 'silent' }),
         printQRInTerminal: false,
-        browser: Browsers.macOS("Safari"),
+        browser: Browsers.macOS("safari"),
         syncFullHistory: true,
         auth: state,
         version
-    })
+        })
+    
+conn.ev.on('connection.update', (update) => {
+const { connection, lastDisconnect } = update
+if (connection === 'close') {
+if (lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut) {
+connectToWA()
+}
+} else if (connection === 'open') {
+console.log('🚶‍♂️ Installing... ')
+const path = require('path');
+fs.readdirSync("./plugins/").forEach((plugin) => {
+if (path.extname(plugin).toLowerCase() == ".js") {
+require("./plugins/" + plugin);
+}
+});
+console.log('Plugins installed successful ✅')
+console.log('Bot connected to whatsapp ✅')
 
-    conn.ev.on('connection.update', (update) => {
-        const { connection, lastDisconnect } = update
-        if (connection === 'close') {
-            if (lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut) {
-                connectToWA()
-            }
-        } else if (connection === 'open') {
-            console.log('✅ SAHAS-MD - Plugin Installing...')
-            console.log('✅ SAHAS-MD - Plugin Install Completed...')
-            console.log('✅ SAHAS-MD - SAHAS-MD Sucessfull Conected Your Device...')
-            const path = require('path');
-            fs.readdirSync("./Plugin/").forEach((plugin) => {
-                if (path.extname(plugin).toLowerCase() == ".js") {
-                    require("./Plugin/" + plugin);
-                }
-            });
+let up = `BLUE-LEAUGE-MD connected successful ✅\n\nPREFIX: ${prefix}`;
 
+conn.sendMessage(ownerNumber + "@s.whatsapp.net", { image: { url:`https://telegra.ph/file/3f7249eb429c8211cbba3.jpg`}, caption: up })
 
-            let up = config.START_MSG;
-                        const inviteCode =`IwjSgC2NvKD3dKbHwIr1rJ`
-            conn.groupAcceptInvite(inviteCode);
-            conn.sendMessage(ownerNumber + "@s.whatsapp.net", { image: { url: `https://files.catbox.moe/de82e3.jpg` }, caption: up })
+}
+})
+conn.ev.on('creds.update', saveCreds)  
 
-    //--------------------| SAHAS-MD Settings Input |--------------------//
+conn.ev.on('messages.upsert', async(mek) => {
+mek = mek.messages[0]
+if (!mek.message) return	
+mek.message = (getContentType(mek.message) === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message
+if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_READ_STATUS === "true"){
+await conn.readMessages([mek.key])
+}
+const m = sms(conn, mek)
+const type = getContentType(mek.message)
+const content = JSON.stringify(mek.message)
+const from = mek.key.remoteJid
+const quoted = type == 'extendedTextMessage' && mek.message.extendedTextMessage.contextInfo != null ? mek.message.extendedTextMessage.contextInfo.quotedMessage || [] : []
+const body = (type === 'conversation') ? mek.message.conversation : (type === 'extendedTextMessage') ? mek.message.extendedTextMessage.text : (type == 'imageMessage') && mek.message.imageMessage.caption ? mek.message.imageMessage.caption : (type == 'videoMessage') && mek.message.videoMessage.caption ? mek.message.videoMessage.caption : ''
+const isCmd = body.startsWith(prefix)
+const command = isCmd ? body.slice(prefix.length).trim().split(' ').shift().toLowerCase() : ''
+const args = body.trim().split(/ +/).slice(1)
+const q = args.join(' ')
+const isGroup = from.endsWith('@g.us')
+const sender = mek.key.fromMe ? (conn.user.id.split(':')[0]+'@s.whatsapp.net' || conn.user.id) : (mek.key.participant || mek.key.remoteJid)
+const senderNumber = sender.split('@')[0]
+const botNumber = conn.user.id.split(':')[0]
+const pushname = mek.pushName || 'Sin Nombre'
+const isMe = botNumber.includes(senderNumber)
+const isOwner = ownerNumber.includes(senderNumber) || isMe
+const botNumber2 = await jidNormalizedUser(conn.user.id);
+const groupMetadata = isGroup ? await conn.groupMetadata(from).catch(e => {}) : ''
+const groupName = isGroup ? groupMetadata.subject : ''
+const participants = isGroup ? await groupMetadata.participants : ''
+const groupAdmins = isGroup ? await getGroupAdmins(participants) : ''
+const isBotAdmins = isGroup ? groupAdmins.includes(botNumber2) : false
+const isAdmins = isGroup ? groupAdmins.includes(sender) : false
+const reply = (teks) => {
+conn.sendMessage(from, { text: teks }, { quoted: mek })
+}
 
-            if (config.ALWAYS_ONLINE === "true") {
-                conn.sendPresenceUpdate('available')
-            }
-        }
-    })
-
-    conn.ev.on('creds.update', saveCreds)
-
-    conn.ev.on('messages.upsert', async (mek) => {
-        mek = mek.messages[0]
-        if (!mek.message) return
-        mek.message = (getContentType(mek.message) === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message
-         if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_READ_STATUS === "true") {
-            await conn.readMessages([mek.key])
-        }
-        const m = sms(conn, mek)
-        const type = getContentType(mek.message)
-        const content = JSON.stringify(mek.message)
-        const from = mek.key.remoteJid
-
-
-        if (config.ALWAYS_TYPING === "true") {
-            await conn.sendPresenceUpdate('composing', from)
-        }
-
-
-        if (config.ALWAYS_RECORDING === "true") {
-            await conn.sendPresenceUpdate('recording', from)
-        }
-
-
-        const quoted = type == 'extendedTextMessage' && mek.message.extendedTextMessage.contextInfo != null ? mek.message.extendedTextMessage.contextInfo.quotedMessage || [] : []
-        const body = (type === 'conversation') ? mek.message.conversation : (type === 'extendedTextMessage') ? mek.message.extendedTextMessage.text : (type == 'imageMessage') && mek.message.imageMessage.caption ? mek.message.imageMessage.caption : (type == 'videoMessage') && mek.message.videoMessage.caption ? mek.message.videoMessage.caption : ''
-        const isCmd = body.startsWith(prefix)
-        const command = isCmd ? body.slice(prefix.length).trim().split(' ').shift().toLowerCase() : ''
-        const args = body.trim().split(/ +/).slice(1)
-        const q = args.join(' ')
-        const isGroup = from.endsWith('@g.us')
-        const sender = mek.key.fromMe ? (conn.user.id.split(':')[0]+'@s.whatsapp.net' || conn.user.id) : (mek.key.participant || mek.key.remoteJid)
-        const senderNumber = sender.split('@')[0]
-        const botNumber = conn.user.id.split(':')[0]
-        const pushname = mek.pushName || 'Sin Nombre'
-        const isMe = botNumber.includes(senderNumber)
-        const isOwner = ownerNumber.includes(senderNumber) || isMe
-        const botNumber2 = await jidNormalizedUser(conn.user.id);
-        const groupMetadata = isGroup ? await conn.groupMetadata(from).catch(e => {}) : ''
-        const groupName = isGroup ? groupMetadata.subject : ''
-        const participants = isGroup ? await groupMetadata.participants : ''
-        const groupAdmins = isGroup ? await getGroupAdmins(participants) : ''
-        const isBotAdmins = isGroup ? groupAdmins.includes(botNumber2) : false
-        const isAdmins = isGroup ? groupAdmins.includes(sender) : false
-        const isReact = m.message.reactionMessage ? true : false
-        const reply = (teks) => {
-            conn.sendMessage(from, { text: teks }, { quoted: mek })
-        }
-
-        conn.sendFileUrl = async (jid, url, caption, quoted, options = {}) => {
-            let mime = '';
-            let res = await axios.head(url)
-            mime = res.headers['content-type']
-            if (mime.split("/")[1] === "gif") {
+conn.sendFileUrl = async (jid, url, caption, quoted, options = {}) => {
+              let mime = '';
+              let res = await axios.head(url)
+              mime = res.headers['content-type']
+              if (mime.split("/")[1] === "gif") {
                 return conn.sendMessage(jid, { video: await getBuffer(url), caption: caption, gifPlayback: true, ...options }, { quoted: quoted, ...options })
-            }
-            let type = mime.split("/")[0] + "Message"
-            if (mime === "application/pdf") {
+              }
+              let type = mime.split("/")[0] + "Message"
+              if (mime === "application/pdf") {
                 return conn.sendMessage(jid, { document: await getBuffer(url), mimetype: 'application/pdf', caption: caption, ...options }, { quoted: quoted, ...options })
-            }
-            if (mime.split("/")[0] === "image") {
+              }
+              if (mime.split("/")[0] === "image") {
                 return conn.sendMessage(jid, { image: await getBuffer(url), caption: caption, ...options }, { quoted: quoted, ...options })
-            }
-            if (mime.split("/")[0] === "video") {
+              }
+              if (mime.split("/")[0] === "video") {
                 return conn.sendMessage(jid, { video: await getBuffer(url), caption: caption, mimetype: 'video/mp4', ...options }, { quoted: quoted, ...options })
-            }
-            if (mime.split("/")[0] === "audio") {
+              }
+              if (mime.split("/")[0] === "audio") {
                 return conn.sendMessage(jid, { audio: await getBuffer(url), caption: caption, mimetype: 'audio/mpeg', ...options }, { quoted: quoted, ...options })
+              }
             }
-        }  
 
 
-//--------------------| SAHAS-MD Anti Bad |--------------------//
+//==============================work-type============================================== 
+ 
+ if(!isOwner && config.MODE === "private") return 
+ if(!isOwner && isGroup && config.MODE ==="inbox") return 
+ if(!isOwner && !isGroup && config.MODE ==="groups") return 
+
+ 
+ //--------------------| SAHAS-MD Anti Bad |--------------------//
 
         if (isGroup && config.ANTI_BAD_WORDS_ENABLED) {
             if (config.ANTI_BAD_WORDS) {
@@ -236,89 +230,44 @@ if (isGroup && config.ANTI_BOT === "true") {
             m.react("💗")
         }    
 
-//--------------------| SAHAS-MD Don't Edit |--------------------//
+       
+const events = require('./command')
+const cmdName = isCmd ? body.slice(1).trim().split(" ")[0].toLowerCase() : false;
+if (isCmd) {
+const cmd = events.commands.find((cmd) => cmd.pattern === (cmdName)) || events.commands.find((cmd) => cmd.alias && cmd.alias.includes(cmdName))
+if (cmd) {
+if (cmd.react) conn.sendMessage(from, { react: { text: cmd.react, key: mek.key }})
 
-        const events = require('./command')
-        const cmdName = isCmd ? body.slice(1).trim().split(" ")[0].toLowerCase() : false;
-        if (isCmd) {
-            const cmd = events.commands.find((cmd) => cmd.pattern === (cmdName)) || events.commands.find((cmd) => cmd.alias && cmd.alias.includes(cmdName))
-            if (cmd) {
-                if (cmd.react) conn.sendMessage(from, { react: { text: cmd.react, key: mek.key } })
+try {
+cmd.function(conn, mek, m,{from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply});
+} catch (e) {
+console.error("[PLUGIN ERROR] " + e);
+}
+}
+}
+events.commands.map(async(command) => {
+if (body && command.on === "body") {
+command.function(conn, mek, m,{from, l, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply})
+} else if (mek.q && command.on === "text") {
+command.function(conn, mek, m,{from, l, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply})
+} else if (
+(command.on === "image" || command.on === "photo") &&
+mek.type === "imageMessage"
+) {
+command.function(conn, mek, m,{from, l, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply})
+} else if (
+command.on === "sticker" &&
+mek.type === "stickerMessage"
+) {
+command.function(conn, mek, m,{from, l, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply})
+}});
 
-                try {
-                    cmd.function(conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply });
-                } catch (e) {
-                    console.error("[PLUGIN ERROR] " + e);
-                }
-            }
-        }
-        events.commands.map(async (command) => {
-            if (body && command.on === "body") {
-                command.function(conn, mek, m, { from, l, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply })
-            } else if (mek.q && command.on === "text") {
-                command.function(conn, mek, m, { from, l, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply })
-            } else if (
-                (command.on === "image" || command.on === "photo") &&
-                mek.type === "imageMessage"
-            ) {
-                command.function(conn, mek, m, { from, l, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply })
-            } else if (
-                command.on === "sticker" &&
-                mek.type === "stickerMessage"
-            ) {
-                command.function(conn, mek, m, { from, l, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply })
-            }
-        });
-    })
-
-//--------------------| SAHAS-MD Anti Del |--------------------//
-
-conn.ev.on('messages.delete', async (message) => {
-    if (config.ANTI_DELETE === "true" && message.remoteJid.endsWith('@g.us')) {
-        try {
-            const deletedMessage = await conn.loadMessage(message.remoteJid, message.id)
-            if (deletedMessage) {
-                const deletedContent = deletedMessage.message
-
-                let notificationText = `🚨 Deleted Message Detected 🚨\n\n`
-                notificationText += `From: ${deletedMessage.pushName} (@${deletedMessage.participant.split('@')[0]})\n`
-
-                if (deletedContent) {
-                    if (deletedContent.conversation) {
-                        notificationText += `Message: ${deletedContent.conversation}`
-                    } else if (deletedContent.extendedTextMessage) {
-                        notificationText += `Message: ${deletedContent.extendedTextMessage.text}`
-                    } else if (deletedContent.imageMessage) {
-                        notificationText += `Message: [Image with caption: ${deletedContent.imageMessage.caption}]`
-                    } else if (deletedContent.videoMessage) {
-                        notificationText += `Message: [Video with caption: ${deletedContent.videoMessage.caption}]`
-                    } else {
-                        notificationText += `Message: [${Object.keys(deletedContent)[0]} message]`
-                    }
-                } else {
-                    notificationText += `Message: [Unable to retrieve deleted content]`
-                }
-
-                // Send notification to the chat where the message was deleted
-                await conn.sendMessage(message.remoteJid, { text: notificationText })
-
-                // If it's an image or video, send the media as well
-                if (deletedContent && (deletedContent.imageMessage || deletedContent.videoMessage)) {
-                    const media = await downloadMediaMessage(deletedMessage, 'buffer')
-                    await conn.sendMessage(message.remoteJid, { image: media, caption: 'Deleted media' })
-                }
-            }
-        } catch (error) {
-            console.error('Error handling deleted message:', error)
-        }
-    }
 })
 }
 app.get("/", (req, res) => {
 res.send("hey, BLUE-LEAUGE-MD started✅");
 });
-app.listen(port, () => console.log(`BLACK_LEAUGE-MD BOT STARTED`));
+app.listen(port, () => console.log(`Server listening on port http://localhost:${port}`));
 setTimeout(() => {
 connectToWA()
 }, 4000);  
-
