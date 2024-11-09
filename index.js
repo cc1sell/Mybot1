@@ -82,13 +82,11 @@ let up = `*𝗕𝗟𝗔𝗖𝗞 𝗟𝗘𝗔𝗨𝗚𝗘 𝗠𝗗 𝗖𝗼𝗻�
 
 *🔹 OWNER:* 94702940582
 
-*🖇️Join My WhatsApp Channel✓💗 - :* https://whatsapp.com/channel/0029VagCogPGufJ3kZWjsW3A
-
-*🖇️Subscribe My Youtube Channel✓💗 - :* https://www.youtube.com/@SlNethuMax
+*🖇️Join My WhatsApp Channel✓💗 - :* https://whatsapp.com/channel/0029VagpujoJJhzdr8aNPp1D
 
 > *ᴘᴏᴡᴇʀᴅ ʙʏ ᴀɴɪʟᴀ ʟᴏᴄʜᴀɴᴀ*`;
 
-conn.sendMessage(ownerNumber + "@s.whatsapp.net", { image: { url: `https://iili.io/dbFAKoG.jpg` }, caption: up })
+conn.sendMessage(ownerNumber + "@s.whatsapp.net", { image: { url: `https://telegra.ph/file/3f7249eb429c8211cbba3.jpg` }, caption: up })
 
 }
 })
