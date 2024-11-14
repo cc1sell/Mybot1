@@ -39,8 +39,8 @@ reply(e)
 
 
 cmd({
-    pattern: "fb",
-    alias: ["fbdl","fb2"],
+    pattern: "id",
+    alias: ["igdl","ig2"],
     react: "🎥",
     desc: "",
     category: "download",
