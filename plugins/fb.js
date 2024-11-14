@@ -35,4 +35,38 @@ await conn.sendMessage(from, { video: { url: fb2.result.hd }, mimetype: "video/m
 console.log(e)
 reply(e)
 }
-})
+});
+
+
+cmd({
+    pattern: "fb",
+    alias: ["fbdl","fb2"],
+    react: "🎥",
+    desc: "",
+    category: "download",
+    use: '.fb < url >',
+    filename: __filename
+},
+async(conn, mek, m,{from, quoted, reply, q }) => {
+try{
+  
+if(!q) return await reply("Please give me tiktok url");
+  if(!q.includes('instagram.com')) return await reply("This url is invalid");
+  
+const igdl = await fetchJson(`https://api-pink-venom.vercel.app/api/igdl?url=${q}`);
+  
+  
+
+
+// SEND HD VIDEO
+await conn.sendMessage(from, { video: { url: igdl.result.sd }, mimetype: "video/mp4", caption: "> *𝙋𝙊𝙒𝙀𝙍𝘿 𝘽𝙔 𝘼𝙉𝙄𝙇𝘼 𝙇𝙊𝘾𝙃𝘼𝙉𝘼*" }, { quoted: mek });
+await conn.sendMessage(from, { video: { url: igdl.result.hd }, mimetype: "video/mp4", caption: "> *𝙋𝙊𝙒𝙀𝙍𝘿 𝘽𝙔 𝘼𝙉𝙄𝙇𝘼 𝙇𝙊𝘾𝙃𝘼𝙉𝘼*" }, { quoted: mek });
+
+  
+} catch (e) {
+console.log(e)
+reply(e)
+}
+});
+
+
