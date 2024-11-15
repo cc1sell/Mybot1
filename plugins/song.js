@@ -31,13 +31,34 @@ let message = `‎‎           🎶 YT SONG DOWNLOADER 🎶
  🧿 Views: ${data.views}
  🤵 Author: ${data.author.name}
   📎 Url: ${data.url}
+
+1Download song audio type
+2Download song document type
 `
+
+        const vv = await conn.sendMessage(from, { image: { url : data.thumbnail }, caption: message }, { quoted : mek });
   
-await conn.sendMessage(from, { image: { url : data.thumbnail }, caption: message }, { quoted : mek })
-  
-// SEND AUDIO NORMAL TYPE and DOCUMENT TYPE
+        conn.ev.on('messages.upsert', async (msgUpdate) => {
+            const msg = msgUpdate.messages[0];
+            if (!msg.message || !msg.message.extendedTextMessage) return;
+
+            const selectedOption = msg.message.extendedTextMessage.text.trim();
+
+            if (msg.message.extendedTextMessage.contextInfo && msg.message.extendedTextMessage.contextInfo.stanzaId === vv.key.id) {
+                switch (selectedOption) {
+                    case '1':
+ // SEND AUDIO NORMAL TYPE and DOCUMENT TYPE
 await conn.sendMessage(from, { audio: { url: ytdl.result.dl_link }, mimetype: "audio/mpeg" }, { quoted: mek })
+                        break;
+                        case'2':
 await conn.sendMessage(from, { document: { url: ytdl.result.dl_link }, mimetype: "audio/mpeg", fileName: data.title + ".mp3", caption: `${data.title}`}, { quoted: mek })
+                       break;
+                       default:
+                        reply("Invalid option. Please select a valid option🔴");
+                }
+
+            }
+        });
   
 } catch(e){
 console.log(e)
