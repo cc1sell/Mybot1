@@ -165,6 +165,74 @@ conn.sendFileUrl = async (jid, url, caption, quoted, options = {}) => {
                 return conn.sendMessage(jid, { audio: await getBuffer(url), caption: caption, mimetype: 'audio/mpeg', ...options }, { quoted: quoted, ...options })
               }
             }
+
+
+//--------------------| SAHAS-MD Anti Bad |--------------------//
+
+        if (isGroup && config.ANTI_BAD_WORDS_ENABLED) {
+            if (config.ANTI_BAD_WORDS) {
+                const badWords = config.ANTI_BAD_WORDS;
+                const bodyLower = body.toLowerCase();
+
+                // Check if the sender is an admin or the bot itself
+                if (!isAdmins && !isOwner) {
+                    for (const word of badWords) {
+                        if (bodyLower.includes(word.toLowerCase())) {
+                            // Notify the group and delete the message
+                            await conn.sendMessage(from, { text: "🚩 Don't use any bad words!" }, { quoted: mek });
+                            await conn.sendMessage(from, { delete: mek.key });
+                            return; // Exit early if a bad word is found
+                        }
+                    }
+                }
+            }
+        }
+
+//--------------------| SAHAS-MD Anti Bot |--------------------//
+
+if (isGroup && config.ANTI_BOT === "true") {
+    // Check if the sender is another bot (Baileys-based or similar) and is not an admin or owner
+    if (!isAdmins && !isOwner && m.isBaileys) {
+        console.log('Detected another bot in the group');
+
+        // Check if the current bot has admin rights
+        if (isBotAdmins) {
+            // Delete the bot's message and send a warning message
+            await conn.sendMessage(from, { delete: mek.key });
+            await conn.sendMessage(from, { text: '🚫 Bot detected and removed. Only admins can add bots to this group.' });
+
+            // Remove the bot from the group (this assumes the detected bot is the sender)
+            await conn.groupParticipantsUpdate(from, [sender], "remove");
+        } else {
+            // Notify that the bot does not have admin rights to remove the detected bot
+            await conn.sendMessage(from, { text: '🚫 Bot detected. I need admin rights to remove it.' });
+        }
+        return; // Exit early since a bot was detected and handled
+    }
+}
+
+//--------------------| SAHAS-MD Anti Link |--------------------//
+
+        if (isGroup && config.ANTI_LINK) {
+            // Define patterns for chat.whatsapp.com links
+            const chatLinkPattern = /chat\.whatsapp\.com\/(g|gb)\/[A-Z0-9]{5,}/i;
+
+            // Check if the message contains a chat.whatsapp.com link
+            if (chatLinkPattern.test(body)) {
+                // Check if the sender is an admin or the bot itself
+                if (!isBotAdmins && !isAdmins && !isOwner) {
+                    // Send a warning message and delete the message
+                    await conn.sendMessage(from, { text: '🚩 Links are not allowed in this group!' }, { quoted: mek });
+                    await conn.sendMessage(from, { delete: mek.key });
+                } else if (!isBotAdmins) {
+                    // Notify that the bot is not an admin
+                    await conn.sendMessage(from, { text: '🚩 I am not an admin, so I cannot delete messages with links.' }, { quoted: mek });
+                }
+                return; // Exit early if a link is found
+            }
+        }
+
+        
             
 //========OwnerReact========            
          
